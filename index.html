@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mi Libro Virtual ❤️</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', cursive, sans-serif;
+            background-color: #0f111a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            perspective: 2000px;
+        }
+
+        /* --- CONTENEDOR MAESTRO --- */
+        .book-wrapper {
+            position: relative;
+            width: clamp(280px, 84vw, 640px); 
+            aspect-ratio: 6 / 4.2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .book {
+            position: relative;
+            width: 50%;
+            height: 100%;
+            left: 25%; 
+            transform-style: preserve-3d;
+            user-select: none;
+        }
+
+        /* --- HOJAS FÍSICAS --- */
+        .page {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            transform-origin: left center;
+            transform-style: preserve-3d;
+            transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Capas actualizadas para 5 hojas */
+        #page1 { z-index: 5; }
+        #page2 { z-index: 4; }
+        #page3 { z-index: 3; }
+        #page4 { z-index: 2; }
+        #page5 { z-index: 1; }
+
+        .front, .back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            padding: clamp(12px, 4vw, 30px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            backface-visibility: hidden; 
+            -webkit-backface-visibility: hidden;
+            cursor: pointer;
+            box-shadow: inset 3px 0 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .front:not(.cover-front), .back {
+            background: #faf6ee;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .back {
+            transform: rotateY(180deg);
+            background: #f4efdf;
+            border-radius: 10px 0 0 10px;
+        }
+
+        .page.flipped {
+            transform: rotateY(-180deg);
+        }
+
+        .front::after {
+            content: ''; position: absolute; left: 0; top: 0; width: 12%; height: 100%;
+            background: linear-gradient(to right, rgba(0,0,0,0.15), rgba(0,0,0,0));
+            pointer-events: none;
+        }
+
+        .back::after {
+            content: ''; position: absolute; right: 0; top: 0; width: 12%; height: 100%;
+            background: linear-gradient(to left, rgba(0,0,0,0.15), rgba(0,0,0,0));
+            pointer-events: none;
+        }
+
+        /* --- PORTADAS --- */
+        .cover-front {
+            background: linear-gradient(135deg, #7209b7, #f72585);
+            color: white;
+            border-radius: 4px 14px 14px 4px;
+            border-left: clamp(4px, 1.5vw, 8px) solid rgba(0,0,0,0.2);
+        }
+
+        .cover-back {
+            background: linear-gradient(135deg, #f72585, #7209b7) !important;
+            color: white !important;
+            border-radius: 14px 4px 4px 14px;
+            border-right: clamp(4px, 1.5vw, 8px) solid rgba(0,0,0,0.2);
+        }
+
+        /* --- TEXTOS ADAPTABLES --- */
+        h1 { font-size: clamp(1.2rem, 4.5vw, 2.2rem); margin-bottom: 8px; font-weight: bold; line-height: 1.1; }
+        .title { font-size: clamp(1.05rem, 4vw, 1.5rem); font-weight: bold; color: #f72585; margin-bottom: 10px; }
+        .text { font-size: clamp(0.8rem, 3.4vw, 1.1rem); color: #333; line-height: 1.4; padding: 0 4px; }
+        .emoji-art { font-size: clamp(2.5rem, 11vw, 4.8rem); margin: 8px 0; filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.15)); }
+
+        .pulse { animation: heartbeat 1.5s infinite ease-in-out; }
+        @keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+        
+        .float { animation: floating 3s infinite ease-in-out; }
+        @keyframes floating { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
+
+        /* Nueva animación para el brillo de la estrella */
+        .glow { animation: glowing 2s infinite ease-in-out; }
+        @keyframes glowing { 0%, 100% { filter: drop-shadow(0 0 5px #f9d71c); } 50% { filter: drop-shadow(0 0 20px #f9d71c); } }
+
+        /* --- BOTONES --- */
+        .controls { display: flex; gap: 15px; margin-top: 25px; z-index: 10; }
+        button {
+            padding: clamp(10px, 3vw, 12px) clamp(20px, 5vw, 28px);
+            font-size: clamp(0.9rem, 3vw, 1rem);
+            font-weight: bold; font-family: inherit;
+            border: none; border-radius: 30px; background: linear-gradient(to right, #7209b7, #f72585);
+            color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(247, 37, 133, 0.4);
+            transition: transform 0.1s, opacity 0.3s;
+        }
+        button:active { transform: scale(0.95); }
+        button:disabled { background: #333; color: #666; cursor: not-allowed; box-shadow: none; opacity: 0.5; }
+    </style>
+</head>
+<body>
+
+    <div class="book-wrapper">
+        <div class="book" id="myBook">
+            
+            <!-- HOJA 1 -->
+            <div class="page" id="page1">
+                <div class="front cover-front" onclick="goNext()">
+                    <h1>Nuestra Historia</h1>
+                    <div class="emoji-art pulse">📖✨</div>
+                    <p style="color: #ffccd5; font-size: clamp(0.7rem, 2.5vw, 0.85rem);">Toca para abrir</p>
+                </div>
+                <div class="back" onclick="goPrev()">
+                    <div class="title">El inicio...</div>
+                    <p class="text">Te mentí, no me fui a dormir. Me quedé haciendo este librito virtual para ti.</p>
+                    <div class="emoji-art">🤫❤️</div>
+                </div>
+            </div>
+
+            <!-- HOJA 2 -->
+            <div class="page" id="page2">
+                <div class="front" onclick="goNext()">
+                    <div class="title">11:11</div>
+                    <div class="emoji-art">✨</div>
+                    <p class="text">Eres mi deseo favorito cada vez que miro el reloj.</p>
+                </div>
+                <div class="back" onclick="goPrev()">
+                    <div class="title">Pensándote 24/7</div>
+                    <div class="emoji-art" style="color:#f9d71c;">☀️</div>
+                    <p class="text">No hay minuto del día en el que un recuerdo tuyo no cruce por mi mente.</p>
+                </div>
+            </div>
+
+            <!-- HOJA 3 (NUEVA: ENREDADOS / LA PRINCESA Y EL SAPO) -->
+            <div class="page" id="page3">
+                <div class="front" onclick="goNext()">
+                    <div class="title">Mi nuevo sueño</div>
+                    <div class="emoji-art float">🏮✨</div>
+                    <p class="text">"Y por fin veo la luz..." <br><br> Eres mi nuevo sueño, igual que en Enredados.</p>
+                </div>
+                <div class="back" onclick="goPrev()">
+                    <div class="title">Mi Evangeline</div>
+                    <div class="emoji-art glow">🌟🪲</div>
+                    <p class="text">Como diría Ray: <br> "Tú eres mi Evangeline". <br><br> La estrella más hermosa de todo mi cielo.</p>
+                </div>
+            </div>
+
+            <!-- HOJA 4 -->
+            <div class="page" id="page4">
+                <div class="front" onclick="goNext()">
+                    <div class="title">En otra vida</div>
+                    <div class="emoji-art float">🪼🫧</div>
+                    <p class="text">Incluso si tuviéramos que nacer de nuevo, te buscaría hasta encontrarte.</p>
+                </div>
+                <div class="back" onclick="goPrev()">
+                    <div class="title">Mi lugar seguro</div>
+                    <div class="emoji-art">🏠💖</div>
+                    <p class="text">El mundo puede ser un caos, pero contigo todo está en paz.</p>
+                </div>
+            </div>
+
+            <!-- HOJA 5 (FINAL) -->
+            <div class="page" id="page5">
+                <div class="front" onclick="goNext()">
+                    <div class="title">Te Amo</div>
+                    <div class="emoji-art pulse">🐸💚</div>
+                    <p class="text">De veritas, de veritas, hoy y para siempre.</p>
+                </div>
+                <div class="back cover-back" onclick="goPrev()">
+                    <h2>Fin.</h2>
+                    <div class="emoji-art">🔒💝</div>
+                    <p class="text" style="color: white;">Hecho con amor para ti.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="prevBtn" onclick="goPrev()" disabled>⬅️ Regresar</button>
+        <button id="nextBtn" onclick="goNext()">Avanzar ➡️</button>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const totalPages = 5; // Actualizado a 5 hojas
+
+        function goNext() {
+            if (currentPage <= totalPages) {
+                const page = document.getElementById('page' + currentPage);
+                page.classList.add('flipped');
+                
+                setTimeout(() => {
+                    page.style.zIndex = currentPage;
+                }, 300);
+
+                currentPage++;
+                updateButtons();
+            }
+        }
+
+        function goPrev() {
+            if (currentPage > 1) {
+                currentPage--;
+                const page = document.getElementById('page' + currentPage);
+                
+                page.style.zIndex = (totalPages + 1) - currentPage;
+                page.classList.remove('flipped');
+                
+                updateButtons();
+            }
+        }
+
+        function updateButtons() {
+            document.getElementById('prevBtn').disabled = (currentPage === 1);
+            document.getElementById('nextBtn').disabled = (currentPage === totalPages + 1);
+        }
+    </script>
+
+</body>
+</html>
